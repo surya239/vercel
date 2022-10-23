@@ -1,0 +1,32 @@
+import pool from '../db.js'
+const c = ' Productivity'
+const d =  'low'
+const changeProductivity = {
+    path:'/changeproductivity/:name/:id',
+    method:'post',
+    handler: async(req, res) => {
+        try {
+            const {label} = req.body
+        const {name, id} = req.params
+
+        await pool.query(`UPDATE ${name} SET productivity = $1 where gameid=$2`, [label, id])
+        if(label === d ){
+            await pool.query("DELETE from changes where col_name = $1 and gameid = $2",[name+c, id])
+        }
+        else{
+            const row = await pool.query("SELECT * from changes where col_name = $1 and gameid = $2",[name+c, id]);
+                if(row.rowCount === 0){
+                    await pool.query("Insert into changes(col_name, d_value,c_value, gameid) values($1, $2, $3, $4)",[name+c,d, label, id ])
+                }
+                else{
+                    await pool.query("Update changes SET c_value = $1 WHERE gameid = $2",[label,id])
+                }
+        }
+        res.sendStatus(200)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
+
+export default changeProductivity
